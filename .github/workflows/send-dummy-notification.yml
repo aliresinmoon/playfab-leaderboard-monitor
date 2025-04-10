@@ -2,12 +2,14 @@ name: Send Dummy Notification
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *' # Every 5 minutes
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Node.js
@@ -18,5 +20,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run dummy notification
+      - name: Send Dummy Notification
         run: node sendDummyNotification.js
+        env:
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
