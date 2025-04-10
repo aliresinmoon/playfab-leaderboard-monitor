@@ -1,29 +1,21 @@
 import axios from 'axios';
 
-const ONESIGNAL_APP_ID = '3ee530aa-8613-485b-9cbd-0263727badc5';
-const ONESIGNAL_API_KEY = 'vpntou3r4epvniqqgccoe2bxe';
-const ONE_SIGNAL_PLAYER_ID = 'YOUR_ONESIGNAL_PLAYER_ID'; // Replace this!
+const message = {
+  app_id: '3ee530aa-8613-485b-9cbd-0263727badc5',
+  included_segments: ['Subscribed Users'],
+  contents: { en: '📢 This is a test notification to ALL users.' },
+  headings: { en: 'Global Test' }
+};
 
-async function sendDummyNotification() {
-  const notification = {
-    app_id: ONESIGNAL_APP_ID,
-    include_player_ids: [ONE_SIGNAL_PLAYER_ID],
-    headings: { en: "🔥 Test Notification" },
-    contents: { en: "This is a dummy push notification from GitHub Actions!" }
-  };
-
-  try {
-    const response = await axios.post("https://onesignal.com/api/v1/notifications", notification, {
-      headers: {
-        Authorization: `Basic ${ONESIGNAL_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log("✅ Dummy notification sent:", response.data);
-  } catch (error) {
-    console.error("❌ Failed to send dummy notification:", error.response?.data || error.message);
+axios.post('https://onesignal.com/api/v1/notifications', message, {
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic vpntou3r4epvniqqgccoe2bxe'
   }
-}
-
-sendDummyNotification();
+})
+.then(response => {
+  console.log('✅ Notification sent:', response.data);
+})
+.catch(error => {
+  console.error('❌ Error sending notification:', error.response?.data || error.message);
+});
