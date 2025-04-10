@@ -1,27 +1,24 @@
-name: Send Dummy Notification
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *' # Every 5 minutes
-
-jobs:
-  notify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Send Dummy Notification
-        run: node sendDummyNotification.js
-        env:
-          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
-          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
+name: Monitor Leaderboard
+ 
+ on:
+   schedule:
+     - cron: '*/5 * * * *'  # Every 5 minutes
+   workflow_dispatch:
+ 
+ jobs:
+   check:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Checkout repo
+         uses: actions/checkout@v3
+ 
+       - name: Set up Node.js
+         uses: actions/setup-node@v3
+         with:
+           node-version: 18
+ 
+       - name: Install dependencies
+         run: npm install
+ 
+       - name: Run leaderboard check
+         run: node checkLeaderboard.js
