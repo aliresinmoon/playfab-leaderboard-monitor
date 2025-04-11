@@ -7,6 +7,9 @@ const STATISTIC_NAME = 'PiPuzzle_LevelsCompleted';
 const ONESIGNAL_APP_ID = '3ee530aa-8613-485b-9cbd-0263727badc5';
 const ONESIGNAL_API_KEY = 'os_v2_app_h3stbkugcnefxhf5ajrxe65nyxwsit5mlbgudcn7e26hpn2lwdp7wmpcujs7p4mhjwiip63ils24iez2qln5ztvx6xy4cntvhmrd4xi';
 
+// Memory cache of previous ranks
+let previousRanks = {};
+
 async function getLeaderboard() {
   const response = await axios.post(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Server/GetLeaderboard`, {
     StatisticName: STATISTIC_NAME,
@@ -21,10 +24,10 @@ async function getLeaderboard() {
   return response.data.data.Leaderboard;
 }
 
-async function getUserData(playFabId, keys) {
+async function getPlayerOneSignalId(playFabId) {
   const response = await axios.post(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Server/GetUserData`, {
     PlayFabId: playFabId,
-    Keys: keys
+    Keys: ['OneSignalPlayerId']
   }, {
     headers: {
       'X-SecretKey': PLAYFAB_SECRET_KEY,
@@ -32,23 +35,19 @@ async function getUserData(playFabId, keys) {
     }
   });
 
-  return response.data.data.Data || {};
-}
+  let id = response.data.data.Data?.OneSignalPlayerId?.Value || null;
 
-async function updateUserData(playFabId, data) {
-  await axios.post(`https://${PLAYFAB_TITLE_ID}.playfabapi.com/Server/UpdateUserData`, {
-    PlayFabId: playFabId,
-    Data: data
-  }, {
-    headers: {
-      'X-SecretKey': PLAYFAB_SECRET_KEY,
-      'Content-Type': 'application/json'
-    }
-  });
+  // Strip "string:" prefix if present
+  if (id?.startsWith("string:")) {
+    id = id.substring(7);
+  }
+
+  return id;
 }
 
 async function sendNotification(oneSignalId, message) {
   console.log(`📤 Sending notification to ${oneSignalId}...`);
+
   const response = await axios.post("https://onesignal.com/api/v1/notifications", {
     app_id: ONESIGNAL_APP_ID,
     include_player_ids: [oneSignalId],
@@ -71,26 +70,20 @@ async function main() {
   for (let i = 0; i < leaderboard.length; i++) {
     const player = leaderboard[i];
     const currentRank = i + 1;
+    const previousRank = previousRanks[player.PlayFabId];
 
-    const userData = await getUserData(player.PlayFabId, ['LastKnownRank', 'OneSignalPlayerId']);
-    const lastRankStr = userData.LastKnownRank?.Value;
-    const oneSignalId = userData.OneSignalPlayerId?.Value;
+    console.log(`🧠 Player ${player.PlayFabId} - Current: ${currentRank}, Previous: ${previousRank}`);
 
-    const lastRank = lastRankStr ? parseInt(lastRankStr) : undefined;
-
-    console.log(`🧠 Player ${player.PlayFabId} - Current: ${currentRank}, Previous: ${lastRank}`);
-
-    if (lastRank && currentRank > lastRank) {
+    if (previousRank && currentRank > previousRank) {
+      const oneSignalId = await getPlayerOneSignalId(player.PlayFabId);
       if (oneSignalId) {
         await sendNotification(oneSignalId, `You dropped to rank ${currentRank} in the leaderboard! ⚠️`);
       } else {
-        console.log(`⚠️ No OneSignal ID for ${player.PlayFabId}`);
+        console.log(`⚠️ No OneSignal ID found for player ${player.PlayFabId}`);
       }
     }
 
-    await updateUserData(player.PlayFabId, {
-      LastKnownRank: currentRank.toString()
-    });
+    previousRanks[player.PlayFabId] = currentRank;
   }
 
   console.log("✅ Leaderboard checked.");
