@@ -5,7 +5,7 @@ const PLAYFAB_TITLE_ID = '168AE2';
 const PLAYFAB_SECRET_KEY = 'IXUJIAQNTC6XPAWQ9N3K4ZNNBX3HNSINKX3OINR1RRJPAH5GYM';
 const STATISTIC_NAME = 'PiPuzzle_LevelsCompleted';
 const ONESIGNAL_APP_ID = '3ee530aa-8613-485b-9cbd-0263727badc5';
-const ONESIGNAL_API_KEY = 'vpntou3r4epvniqqgccoe2bxe';
+const ONESIGNAL_API_KEY = 'os_v2_app_h3stbkugcnefxhf5ajrxe65nyxwsit5mlbgudcn7e26hpn2lwdp7wmpcujs7p4mhjwiip63ils24iez2qln5ztvx6xy4cntvhmrd4xi';
 
 // Memory cache of previous ranks
 let previousRanks = {};
@@ -39,7 +39,8 @@ async function getPlayerOneSignalId(playFabId) {
 }
 
 async function sendNotification(oneSignalId, message) {
-  await axios.post("https://onesignal.com/api/v1/notifications", {
+  console.log(`📤 Sending notification to ${oneSignalId}...`);
+  const response = await axios.post("https://onesignal.com/api/v1/notifications", {
     app_id: ONESIGNAL_APP_ID,
     include_player_ids: [oneSignalId],
     headings: { en: "🏆 Leaderboard Update!" },
@@ -50,6 +51,8 @@ async function sendNotification(oneSignalId, message) {
       'Content-Type': 'application/json'
     }
   });
+
+  console.log("🔔 Notification response:", response.data);
 }
 
 async function main() {
