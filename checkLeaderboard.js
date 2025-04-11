@@ -84,14 +84,19 @@ async function main() {
 
   console.log(`📊 Leaderboard fetched: ${leaderboard.length} players`);
 
+  // Build a set of current PlayFab IDs for cleanup
+  const currentIds = new Set();
+
   for (let i = 0; i < leaderboard.length; i++) {
     const player = leaderboard[i];
     const currentRank = i + 1;
     const previousRank = previousRanks[player.PlayFabId];
+    currentIds.add(player.PlayFabId);
 
     console.log(`🧠 Player ${player.PlayFabId} - Current: ${currentRank}, Previous: ${previousRank}`);
 
-    if (previousRank && currentRank > previousRank) {
+    // ✅ Send only if previous rank was 3 or 10 and rank dropped
+    if ((previousRank === 3 || previousRank === 10) && currentRank > previousRank) {
       const oneSignalId = await getPlayerOneSignalId(player.PlayFabId);
       if (oneSignalId) {
         await sendNotification(oneSignalId, `You dropped to rank ${currentRank} in the leaderboard! ⚠️`);
@@ -100,7 +105,15 @@ async function main() {
       }
     }
 
+    // Update current rank
     previousRanks[player.PlayFabId] = currentRank;
+  }
+
+  // 🧹 Remove old IDs not in current leaderboard
+  for (const id in previousRanks) {
+    if (!currentIds.has(id)) {
+      delete previousRanks[id];
+    }
   }
 
   await saveRanks(previousRanks);
